@@ -1,9 +1,15 @@
 import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
 
-function europePmcSearchPOSTQuery(id) {
+function URLPublicationFullText({ id }) {
   const baseUrl = `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC${id}/fullTextXML`;
-  return { baseUrl };
+  const requestOptions = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+    },
+  };
+  return { baseUrl, requestOptions };
 }
 
 function getPlainText({ pubBodyJson }) {
@@ -55,26 +61,15 @@ function getPlainText({ pubBodyJson }) {
   return str;
 }
 
-export async function handleLiterartureRequest({ id }) {
-  const { baseUrl } = europePmcSearchPOSTQuery(id);
-  const requestOptions = {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-  };
-
-  let json = null;
+export async function getPublicationPlainText({ id }) {
+  const { baseUrl, requestOptions } = URLPublicationFullText({ id });
   let str = "";
   const parser = new XMLParser();
   await axios.get(baseUrl, requestOptions).then(({ data: XMLData }) => {
     const jsonData = parser.parse(XMLData);
     const pubBodyJson = jsonData.article.body;
-
     const response = getPlainText({ pubBodyJson });
-
     str = response;
-    json = pubBodyJson;
   });
   return str;
 }
