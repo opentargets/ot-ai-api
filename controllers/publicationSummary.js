@@ -1,7 +1,7 @@
 import { loadQAMapReduceChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
-import { PromptTemplate } from "langchain/prompts";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import wandb from '@wandb/sdk';
 
 import * as dotenv from "dotenv";
 dotenv.config();
@@ -12,7 +12,6 @@ const model = new OpenAI({
   modelName: "gpt-3.5-turbo",
   openAIApiKey: process.env.OPENAI_TOKEN,
   temperature: 0.5,
-  maxConcurrency: 10,
 });
 
 const createPrompt = ({ targetSymbol, diseaseName }) => {
@@ -44,14 +43,15 @@ export const getPublicationSummary = async ({
   text,
   targetSymbol,
   diseaseName,
+  pmcId,
+  wbTracer,
 }) => {
   const prompt = createPrompt({ targetSymbol, diseaseName });
 
   const wordCount = text.split(" ").length;
-  // generate docs from textSplitter only if wordCount is bigger than 4000 words, otherwise use the text as is
+  const chunkSize = 14000 // max character count per chunk
   const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 4000,
-    chunkOverlap: 200,
+    chunkSize,
     separators: ["\n\n", "\n", " "],
   });
 
@@ -60,10 +60,29 @@ export const getPublicationSummary = async ({
   console.log({ wordCount, docsLength: docs.length });
 
   const chain = loadQAMapReduceChain(model);
-  const apiResponse = await chain.call({
-    input_documents: docs,
-    question: prompt,
-  });
 
-  return apiResponse;
+  if (wbTracer !== null) {
+    wandb.log(
+      {
+        "targetSymbol": targetSymbol,
+        "diseaseName": diseaseName,
+        "pmcId": pmcId,
+        "chunkSize": chunkSize,
+        "wordCount": wordCount,
+        "docsLength": docs.length
+      }
+    );
+    const apiResponse = await chain.call({
+      input_documents: docs,
+      question: prompt,
+    }, wbTracer);
+    if (apiResponse.text.includes("no concise summary")) {
+      wandb.log({"successFlag": 0});
+    } else {wandb.log({"successFlag": 1})}
+  } else {
+    return await chain.call({
+      input_documents: docs,
+      question: prompt,
+    });
+  }
 };
