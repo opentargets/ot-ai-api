@@ -22,11 +22,6 @@ export const run = async ({ text, targetSymbol, diseaseName }) => {
 
   const docs = await textSplitter.createDocuments([text]);
 
-  const prompt = new PromptTemplate({
-    template: _prompt,
-    inputVariables: ["text"],
-  });
-
   console.log({ wordCount });
   console.log({ length: docs.length });
 
