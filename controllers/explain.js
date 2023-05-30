@@ -1,6 +1,5 @@
 import { loadQAMapReduceChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
-import { PromptTemplate } from "langchain/prompts";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 import * as dotenv from "dotenv";
