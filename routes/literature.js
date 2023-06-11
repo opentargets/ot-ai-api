@@ -3,46 +3,54 @@ import { getPublicationPlainText } from "../controllers/publication.js";
 import {
   getPublicationSummary,
   streamTest,
+  getPubSummaryPayload,
 } from "../controllers/publicationSummary.js";
+import logger from "../utils/logger.js";
 
 const router = express.Router();
 
 router.post("/publication/summary/stream", async (req, res) => {
-  const pmcId = req.body.payload.pmcId;
-  const targetSymbol = req.body.payload.targetSymbol;
-  const diseaseName = req.body.payload.diseaseName;
+  const { pmcId, targetSymbol, diseaseName } = getPubSummaryPayload({
+    req,
+    next,
+  });
+
+  res.setHeader("Content-Type", "application/ndjson");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
   streamTest({ res });
 });
 
-const validatePubummaryPayload = async ({
-  payload: { pmcId, targetSymbol, diseaseName },
-}) => {
-  if (!pmcId || !targetSymbol || !diseaseName) {
-    throw new Error("BROKEN");
-  }
-};
-
-router.post("/publication/summary/", async (req, res, next) => {
-  const pmcId = req.body.payload.pmcId;
-  const targetSymbol = req.body.payload.targetSymbol;
-  const diseaseName = req.body.payload.diseaseName;
-
-  try {
-    await validatePubummaryPayload(req.body);
-  } catch (err) {
-    next(err);
-  }
-  // validatePubummaryPayload(req.body);
-
-  console.log({ pmcId, targetSymbol, diseaseName });
-  const plainText = await getPublicationPlainText({ id: pmcId });
-  const json = await getPublicationSummary({
-    text: plainText,
-    targetSymbol,
-    diseaseName,
-    response: res,
+router.post("/publication/summary/", async (req, res) => {
+  const summaryPayload = await getPubSummaryPayload({
+    res,
+    req,
   });
-  res.send(json);
+  const { pmcId, targetSymbol, diseaseName } = summaryPayload;
+
+  logger.info(`Request on pub summary`);
+
+  let plainText;
+  let publicationSummary;
+  try {
+    plainText = await getPublicationPlainText({ id: pmcId });
+  } catch {
+    logger.error("Error getting publication text");
+    return res.status(503).json({ error: "Error getting publication text" });
+  }
+  try {
+    publicationSummary = await getPublicationSummary({
+      text: plainText,
+      targetSymbol,
+      diseaseName,
+      response: res,
+    });
+  } catch {
+    res.status(503).json({ error: "Error getting publication summary" });
+  }
+  res.send(publicationSummary);
 });
 
 export default router;
