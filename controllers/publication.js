@@ -17,24 +17,24 @@ function getPlainText({ pubBodyJson }) {
 
   const hanblePChild = (par, title) => {
     const isParArr = Array.isArray(par);
-    let sectionText = title + "\n ";
+    let sectionText = title + " \n ";
     if (isParArr) {
       par.forEach((p) => {
         let text = "";
         if (typeof p === "string") {
           text = p + "\n";
         } else {
-          text = p["#text"] + "\n";
+          text = p["#text"] + " \n ";
         }
         sectionText += text;
       });
     } else {
       let text = "";
       if (typeof par === "object") {
-        text = par["#text"] + "\n";
+        text = par["#text"] + " \n ";
       }
       if (typeof par === "string") {
-        text = par + "\n";
+        text = par + " \n ";
       }
       sectionText += text;
     }
@@ -42,22 +42,23 @@ function getPlainText({ pubBodyJson }) {
   };
 
   const handleSecChild = (element) => {
-    element.sec.forEach((section) => {
-      const title = section.title;
-      const par = section.p;
-      const childSec = section.sec;
-      if (!par && !childSec) return;
-      if (par) {
-        str += hanblePChild(par, title);
-      }
-      if (childSec) {
-        handleSecChild(section);
-      }
-    });
+    if (Array.isArray(element.sec)) {
+      element.sec.forEach((section) => {
+        const title = section.title;
+        const par = section.p;
+        const childSec = section.sec;
+        if (!par && !childSec) return;
+        if (par) {
+          str += hanblePChild(par, title);
+        }
+        if (childSec) {
+          handleSecChild(section);
+        }
+      });
+    }
   };
 
   handleSecChild(pubBodyJson);
-
   return str;
 }
 
@@ -65,11 +66,16 @@ export async function getPublicationPlainText({ id }) {
   const { baseUrl, requestOptions } = URLPublicationFullText({ id });
   let str = "";
   const parser = new XMLParser();
-  await axios.get(baseUrl, requestOptions).then(({ data: XMLData }) => {
-    const jsonData = parser.parse(XMLData);
-    const pubBodyJson = jsonData.article.body;
-    const response = getPlainText({ pubBodyJson });
-    str = response;
-  });
+  await axios
+    .get(baseUrl, requestOptions)
+    .then(({ data: XMLData }) => {
+      const jsonData = parser.parse(XMLData);
+      const pubBodyJson = jsonData.article.body;
+      const response = getPlainText({ pubBodyJson });
+      str = response;
+    })
+    .catch(() => {
+      throw new Error("Error parsing full text");
+    });
   return str;
 }
