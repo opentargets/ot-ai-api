@@ -1,0 +1,30 @@
+language: node_js
+node_js:
+  - "18"
+  
+services:
+  - docker
+
+env:
+  global:
+    - QUAY_REPO="quay.io/opentargets/ot-ai-api"
+    - LOCAL_IMAGE_NAME="ot-ai-api"
+  
+before_install:
+  - docker version
+  - docker-compose version
+
+script:
+  - docker build . -t "${LOCAL_IMAGE_NAME}"
+
+after_success:
+  - set -ev
+  - if [ "${TRAVIS_TAG}" != ""  ]; then
+      docker login -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io ;
+      if [ "${TRAVIS_BRANCH}" == "master" ]; then
+        docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:latest";
+        docker push "${QUAY_REPO}:latest";
+      fi
+      docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:${TRAVIS_TAG}";
+      docker push "${QUAY_REPO}:${TRAVIS_TAG}";
+    fi
