@@ -4,11 +4,6 @@ addons:
     sources:
       - sourceline: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable'
         key_url: 'https://download.docker.com/linux/ubuntu/gpg'
-    packages:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose
 
 services:
   - docker
