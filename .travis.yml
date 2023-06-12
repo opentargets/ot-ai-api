@@ -25,11 +25,5 @@ after_success:
   - docker login -u="$QUAY_USER" -p="$QUAY_PASSWORD" quay.io
   - docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:${TRAVIS_COMMIT}"
   - docker push "${QUAY_REPO}:${TRAVIS_COMMIT}"
-  - if [ "${TRAVIS_TAG}" != ""  ]; then
-      if [ "${TRAVIS_BRANCH}" == "master" ]; then
-        docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:latest";
-        docker push "${QUAY_REPO}:latest";
-      fi
-      docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:${TRAVIS_TAG}";
-      docker push "${QUAY_REPO}:${TRAVIS_TAG}";
-    fi
+  - if [ "${TRAVIS_TAG}" != ""  ]; then docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:${TRAVIS_TAG}"; docker push "${QUAY_REPO}:${TRAVIS_TAG}"; fi
+  - if [ "${TRAVIS_BRANCH}" == "master" ]; then docker tag "${LOCAL_IMAGE_NAME}" "${QUAY_REPO}:latest"; docker push "${QUAY_REPO}:latest"; fi
