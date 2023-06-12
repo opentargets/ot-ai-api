@@ -10,6 +10,9 @@ addons:
       - containerd.io
       - docker-compose
 
+services:
+  - docker
+
 env:
   global:
     - QUAY_REPO="quay.io/opentargets/ot-ai-api"
