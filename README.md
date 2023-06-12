@@ -32,10 +32,13 @@ Build your image:
 $ docker build . -t <your username>/ot-ai-api
 ```
 
-Build your image:
+Run your image:
+For running the image you need to map the port to whatever you wish to use on your host. In this example, we simply map port 49160 of the host to port 8080 of the Docker.
+
+Youl will also need to provide your own OpenAI key via the environment variable `OPENAI_TOKEN`.
 
 ```
-$ docker run -p 49160:8080 -d <your username>/ot-ai-api
+$ docker run -p 49160:8080 -e "OPENAI_TOKEN=XXXXXXXXXXX" -d <your username>/ot-ai-api
 ```
 
 ## Copyright
