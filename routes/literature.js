@@ -4,7 +4,6 @@ import { getPublicationPlainText } from "../controllers/publication.js";
 import {
   getPublicationSummary,
   streamTest,
-  getPubSummaryPayload,
 } from "../controllers/publicationSummary.js";
 import * as dotenv from "dotenv";
 import logger from "../utils/logger.js";
@@ -13,11 +12,6 @@ dotenv.config();
 const router = express.Router();
 
 router.post("/publication/summary/stream", async (req, res) => {
-  const { pmcId, targetSymbol, diseaseName } = getPubSummaryPayload({
-    req,
-    next,
-  });
-
   res.setHeader("Content-Type", "application/ndjson");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
