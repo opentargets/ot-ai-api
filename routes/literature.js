@@ -31,8 +31,8 @@ router.post("/publication/summary/", async (req, res) => {
     req,
   });
   const { pmcId, targetSymbol, diseaseName } = summaryPayload;
-
-  const wbIdWithRandom = `${pmcId}_${targetSymbol}_${diseaseName}_${Math.floor(
+  const prettyDiseaseName = diseaseName.replace(/\s/g, "_");
+  const wbIdWithRandom = `${pmcId}_${targetSymbol}_${prettyDiseaseName}_${Math.floor(
     Math.random() * 1000
   )}`;
   const wbTracer = await WandbTracer.init(
