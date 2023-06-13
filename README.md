@@ -2,29 +2,29 @@
 
 This repository holds the Open Targets AI API router.
 
-## Required stack
+### Required stack
 
 - [NodeJS >= v18](https://nodejs.org/en/)
 
-## Install dependencies
+### Install dependencies
 
 ```
 $ npm install
 ```
 
-## Running development
+### Running development
 
 ```
 $ npm run dev
 ```
 
-## Running local build
+### Running local build
 
 ```
 $ npm run start
 ```
 
-## Building production-ready bundle with docker
+### Building production-ready bundle with docker
 
 Build your image:
 

@@ -7,6 +7,7 @@ import {
   getPubSummaryPayload,
 } from "../controllers/publicationSummary.js";
 import * as dotenv from "dotenv";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 const router = express.Router();
@@ -25,12 +26,31 @@ router.post("/publication/summary/stream", async (req, res) => {
   streamTest({ res });
 });
 
+async function payloadValidator({ req }) {
+  let error = false;
+  if (!req.body.payload) {
+    error = "Missing payload";
+  }
+  if (!req.body.payload.pmcId) {
+    error = "Missing pmcId in payload";
+  }
+  if (!req.body.payload.targetSymbol) {
+    error = "Missing targetSymbol in payload";
+  }
+  if (!req.body.payload.diseaseName) {
+    error = "Missing diseaseName in payload";
+  }
+  return { error };
+}
+
 router.post("/publication/summary/", async (req, res) => {
-  const summaryPayload = await getPubSummaryPayload({
-    res,
-    req,
-  });
-  const { pmcId, targetSymbol, diseaseName } = summaryPayload;
+  const payloadError = await payloadValidator({ req });
+  if (payloadError.error) {
+    return res.status(400).json(payloadError);
+  }
+
+  const { pmcId, targetSymbol, diseaseName } = req.body.payload;
+
   const prettyDiseaseName = diseaseName.replace(/\s/g, "_");
   const wbIdWithRandom = `${pmcId}_${targetSymbol}_${prettyDiseaseName}_${Math.floor(
     Math.random() * 1000
@@ -60,9 +80,9 @@ router.post("/publication/summary/", async (req, res) => {
       response: res,
     });
   } catch {
-    res.status(503).json({ error: "Error getting publication summary" });
+    return res.status(503).json({ error: "Error getting publication summary" });
   }
-  res.send(publicationSummary);
+  res.json(publicationSummary);
   await WandbTracer.finish();
 });
 
