@@ -11,15 +11,6 @@ import logger from "../utils/logger.js";
 dotenv.config();
 const router = express.Router();
 
-router.post("/publication/summary/stream", async (req, res) => {
-  res.setHeader("Content-Type", "application/ndjson");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders();
-
-  streamTest({ res });
-});
-
 async function payloadValidator({ req }) {
   let error = false;
   if (!req.body.payload) {
@@ -36,6 +27,15 @@ async function payloadValidator({ req }) {
   }
   return { error };
 }
+
+router.post("/publication/summary/stream", async (req, res) => {
+  res.setHeader("Content-Type", "application/ndjson");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  streamTest({ res });
+});
 
 router.post("/publication/summary/", async (req, res) => {
   const payloadError = await payloadValidator({ req });
