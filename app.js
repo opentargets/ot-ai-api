@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+
 import logger from "./utils/logger.js";
 import httpLogger from "./middlewares/httpLogger.js";
 import literatureRouter from "./routes/literature.js";
@@ -10,6 +12,8 @@ var port = normalizePort(process.env.PORT || "8080");
 const app = express();
 app.use(httpLogger);
 app.use(express.json());
+
+app.use(cors());
 
 app.use("/literature", literatureRouter);
 app.use("/health", healthRouter);

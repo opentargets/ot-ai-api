@@ -46,7 +46,7 @@ export const getPublicationSummary = async ({
   targetSymbol,
   diseaseName,
   pmcId,
-  wbTracer,
+  wbTracer = null,
 }) => {
   const prompt = createPrompt({ targetSymbol, diseaseName });
 
@@ -62,7 +62,7 @@ export const getPublicationSummary = async ({
   logger.info(JSON.stringify({ wordCount, docsLength: docs.length }));
 
   const chain = loadQAMapReduceChain(model);
-  logger.info("reauest to gpt");
+  logger.info("request to gpt");
   if (wbTracer !== null) {
     wandb.log({
       targetSymbol: targetSymbol,

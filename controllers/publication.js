@@ -2,7 +2,7 @@ import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
 
 function URLPublicationFullText({ id }) {
-  const baseUrl = `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC${id}/fullTextXML`;
+  const baseUrl = `https://www.ebi.ac.uk/europepmc/webservices/rest/${id}/fullTextXML`;
   const requestOptions = {
     method: "GET",
     headers: {

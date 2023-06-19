@@ -1,11 +1,12 @@
 import express from "express";
 import { WandbTracer } from "@wandb/sdk/integrations/langchain";
+import * as dotenv from "dotenv";
+
 import { getPublicationPlainText } from "../controllers/publication.js";
 import {
   getPublicationSummary,
   streamTest,
 } from "../controllers/publicationSummary.js";
-import * as dotenv from "dotenv";
 import logger from "../utils/logger.js";
 
 dotenv.config();
@@ -46,9 +47,8 @@ router.post("/publication/summary/", async (req, res) => {
   const { pmcId, targetSymbol, diseaseName } = req.body.payload;
 
   const prettyDiseaseName = diseaseName.replace(/\s/g, "_");
-  const wbIdWithRandom = `${pmcId}_${targetSymbol}_${prettyDiseaseName}_${Math.floor(
-    Math.random() * 1000
-  )}`;
+  const queryId = `${pmcId}_${targetSymbol}_${prettyDiseaseName}`;
+  const wbIdWithRandom = `${queryId}_${Math.floor(Math.random() * 1000)}`;
   const wbTracer = await WandbTracer.init(
     { project: "ot-explain", id: wbIdWithRandom },
     false
