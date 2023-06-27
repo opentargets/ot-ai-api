@@ -81,7 +81,9 @@ router.post("/publication/summary/", async (req, res) => {
     return res.status(503).json({ error: "Error getting publication summary" });
   }
   res.json(publicationSummary);
-  await WandbTracer.finish();
+  if (wbTracer) {
+    await WandbTracer.finish();
+  }
 });
 
 export default router;
