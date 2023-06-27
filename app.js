@@ -8,7 +8,7 @@ import healthRouter from "./routes/health.js";
 import { normalizePort, isProduction, isDevelopment } from "./utils/index.js";
 
 const port = normalizePort(process.env.PORT || "8080");
-const originRegExp = /^(.*\.)?opentargets\.(org|xwz)$/;
+const originRegExp = /^(.*\.)?opentargets\.(org|xyz)$/;
 
 const app = express();
 
