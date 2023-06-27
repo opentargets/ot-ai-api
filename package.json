@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node app.js",
+    "start": "NODE_ENV=development node app.js",
     "start:prod": "NODE_ENV=production node app.js",
-    "dev": "nodemon app.js"
+    "dev": "NODE_ENV=development nodemon app.js"
   },
   "dependencies": {
     "@wandb/sdk": "^0.5.1",

@@ -58,11 +58,9 @@ export const getPublicationSummary = async ({
   });
 
   const docs = await textSplitter.createDocuments([text]);
-
   logger.info(JSON.stringify({ wordCount, docsLength: docs.length }));
-
   const chain = loadQAMapReduceChain(model);
-  logger.info("request to gpt");
+  logger.info("request to openai");
   if (wbTracer !== null) {
     wandb.log({
       targetSymbol: targetSymbol,

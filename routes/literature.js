@@ -7,6 +7,7 @@ import {
   getPublicationSummary,
   streamTest,
 } from "../controllers/publicationSummary.js";
+import { isDevelopment } from "../utils/index.js";
 import logger from "../utils/logger.js";
 
 dotenv.config();
@@ -49,10 +50,13 @@ router.post("/publication/summary/", async (req, res) => {
   const prettyDiseaseName = diseaseName.replace(/\s/g, "_");
   const queryId = `${pmcId}_${targetSymbol}_${prettyDiseaseName}`;
   const wbIdWithRandom = `${queryId}_${Math.floor(Math.random() * 1000)}`;
-  const wbTracer = await WandbTracer.init(
-    { project: "ot-explain", id: wbIdWithRandom },
-    false
-  );
+  let wbTracer = null;
+  if (isDevelopment) {
+    wbTracer = await WandbTracer.init(
+      { project: "ot-explain", id: wbIdWithRandom },
+      false
+    );
+  }
 
   logger.info(`Request on pub summary`);
 

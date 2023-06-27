@@ -5,15 +5,27 @@ import logger from "./utils/logger.js";
 import httpLogger from "./middlewares/httpLogger.js";
 import literatureRouter from "./routes/literature.js";
 import healthRouter from "./routes/health.js";
-import { normalizePort } from "./utils/index.js";
+import { normalizePort, isProduction, isDevelopment } from "./utils/index.js";
 
-var port = normalizePort(process.env.PORT || "8080");
+const port = normalizePort(process.env.PORT || "8080");
+const originRegExp = /^(.*\.)?opentargets\.(org|xwz)$/;
 
 const app = express();
+
 app.use(httpLogger);
 app.use(express.json());
 
-app.use(cors());
+if (isDevelopment) {
+  app.use(cors());
+}
+
+if (isProduction) {
+  app.use(
+    cors({
+      origin: [originRegExp],
+    })
+  );
+}
 
 app.use("/literature", literatureRouter);
 app.use("/health", healthRouter);
