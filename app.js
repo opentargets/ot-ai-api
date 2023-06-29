@@ -21,7 +21,10 @@ if (isDevelopment) {
 if (isProduction) {
   app.use(
     cors({
-      origin: /^(.*\.)?opentargets\.(org|xyz)$/,
+      origin: [
+        "https://partner-platform.dev.opentargets.xyz",
+        "https://partner-platform.opentargets.org",
+      ],
     })
   );
 }
