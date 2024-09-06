@@ -11,7 +11,7 @@ dotenv.config();
 // query setup
 // summarization docs https://js.langchain.com/docs/api/chains/functions/loadQAMapReduceChain
 const model = new OpenAI({
-  modelName: "gpt-3.5-turbo",
+  modelName: "gpt-4o-mini",
   openAIApiKey: process.env.OPENAI_TOKEN,
   temperature: 0.5,
 });
