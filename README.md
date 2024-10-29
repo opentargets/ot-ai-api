@@ -11,8 +11,8 @@
 ### Requirements
 
 - **Python 3.8+**
-- **FastAPI** for API management
-- **UV** for dependency and environment management
+- [**FastAPI**](https://fastapi.tiangolo.com/) for API management
+- [**UV**](https://docs.astral.sh/uv/) for dependency and environment management
 - **Docker** for deployment
 
 ### Setup and Installation
