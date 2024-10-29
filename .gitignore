@@ -39,6 +39,7 @@ docs/_build/
 *.tmp
 *.bak
 *.orig
+.ruff_cache
 
 poetry.lock
 

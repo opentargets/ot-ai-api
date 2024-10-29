@@ -1,28 +1,45 @@
 # Open Targets AI API
 
-This repository holds the Open Targets AI API router.
+**Open Targets AI API** is a specialized API service that provides AI-driven endpoints to support the Open Targets web application, integrating natural language processing (NLP) and data extraction features.
 
-### Required stack
+### Features
 
-- [NodeJS >= v18](https://nodejs.org/en/)
+- **AI-Driven Endpoints**: Generates natural language summaries and insights on target-disease evidence from publications.
+- **Integration with LangChain**: Facilitates NLP and AI functionalities via OpenAI models.
+- **Automatic Documentation**: Accessible through Swagger and ReDoc endpoints for streamlined API exploration.
 
-### Install dependencies
+### Requirements
 
-```
-$ npm install
-```
+- **Python 3.8+**
+- **FastAPI** for API management
+- **UV** for dependency and environment management
+- **Docker** for deployment
 
-### Running development
+### Setup and Installation
 
-```
-$ npm run dev
-```
+1. **Clone the repository**:
 
-### Running local build
+   ```bash
+   git clone git@github.com:opentargets/ot-ai-api.git
+   cd ot-ai-api
+   ```
 
-```
-$ npm run start
-```
+2. **Install dependencies** using UV:
+
+   ```bash
+   uv sync
+   ```
+
+3. **Run development server**:
+
+   ```bash
+   uv run fastapi dev
+   ```
+
+### Usage
+
+- Access Swagger documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
+- Access ReDoc documentation at [http://localhost:8000/redoc](http://localhost:8000/redoc).
 
 ### Building production-ready bundle with docker
 

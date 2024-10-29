@@ -1,12 +1,13 @@
-FROM node:18
+FROM python:3.12-slim
 
-WORKDIR /usr/src/app
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY package*.json ./
+# Copy the application into the container
+COPY . /app
 
-RUN npm install
+# Install the application dependencie
+WORKDIR /app
+RUN uv sync --frozen --no-cache
 
-COPY . .
-
-EXPOSE 8080
-CMD [ "npm", "start" ]
+CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "80", "--host", "0.0.0.0"]
