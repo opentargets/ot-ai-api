@@ -1,6 +1,6 @@
 {
   "name": "ot-ai-api",
-  "version": "0.0.0",
+  "version": "0.0.12",
   "private": true,
   "type": "module",
   "scripts": {

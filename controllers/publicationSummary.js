@@ -1,18 +1,35 @@
+import wandb from "@wandb/sdk";
 import { loadQAMapReduceChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import wandb from "@wandb/sdk";
 
 import * as dotenv from "dotenv";
+import fs from "fs";
 import logger from "../utils/logger.js";
 
 dotenv.config();
 
 // query setup
 // summarization docs https://js.langchain.com/docs/api/chains/functions/loadQAMapReduceChain
+const getOpenAIToken = () => {
+  if (process.env.OPENAI_TOKEN_FILE) {
+    try {
+      return fs.readFileSync(process.env.OPENAI_TOKEN_FILE, 'utf8').trim();
+    } catch (error) {
+      logger.error(`Error reading OPENAI_TOKEN_FILE: ${error.message}`);
+      throw new Error('Failed to read OpenAI token file');
+    }
+  }
+  else if (process.env.OPENAI_TOKEN) {
+    return process.env.OPENAI_TOKEN;
+  }
+
+  throw new Error('OPENAI_TOKEN or OPENAI_TOKEN_FILE must be provided');
+};
+
 const model = new OpenAI({
   modelName: "gpt-4o-mini",
-  openAIApiKey: process.env.OPENAI_TOKEN,
+  openAIApiKey: getOpenAIToken(),
   temperature: 0.5,
 });
 
