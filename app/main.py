@@ -1,14 +1,29 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import JSONResponse
+from app.config import get_config
+from app.controllers.publication import fetch_plain_text_from_europe_pmc
+from app.models.publication import (
+    PublicationPlainTextRequest,
+    PublicationSummaryRequest,
+)
+import logging
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-# CORS
+
+config = get_config()
+
+app = FastAPI(debug=config.DEBUG)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=config.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -16,8 +31,110 @@ app.add_middleware(
 
 
 @app.get("/")
-async def read_root():
-    return {"message": "Open targets AI API"}
+async def root():
+    return {"message": f"Welcome to {config.APP_NAME}"}
+
+
+@app.post("/literature/publication/plaintext/")
+async def get_publication_plain_text(request: PublicationPlainTextRequest):
+    try:
+        logger.info(f"Fetching publication text for PMC ID: {request.pmc_id}")
+        plain_text = fetch_plain_text_from_europe_pmc(request.pmc_id)
+        return {"pmc_id": request.pmc_id, "plain_text": plain_text}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error occurred")
+
+
+def handle_publication_summary_request(request: PublicationSummaryRequest) -> dict:
+    """
+    Logic for creating publication summaries.
+
+    This function coordinates the process of:
+    1. Fetching the publication text from Europe PMC
+    2. Generating a focused summary using OpenAI
+
+    Args:
+        request: PublicationSummaryRequest containing PMC ID, target symbol, and disease name
+
+    Returns:
+        dict: Summary response with metadata
+
+    Raises:
+        HTTPException: For various error conditions during processing
+    """
+    try:
+        logger.info(f"Processing summary request for PMC {request.pmcId}")
+
+        # Step 1: Fetch publication text
+        logger.info(f"Fetching publication text for PMC {request.pmcId}")
+        publication_text = fetch_plain_text_from_europe_pmc(
+            request.pmcId, include_references=request.includeReferences
+        )
+
+        if not publication_text or len(publication_text.strip()) < 100:
+            raise HTTPException(
+                status_code=422,
+                detail="Publication text is too short or empty for meaningful summary",
+            )
+
+        # Step 2: Generate summary
+        logger.info(
+            f"Generating summary for {request.targetSymbol} vs {request.diseaseName}"
+        )
+        from app.controllers.summary_controller import create_publication_summary
+
+        summary_result = create_publication_summary(
+            text=publication_text,
+            target_symbol=request.targetSymbol,
+            disease_name=request.diseaseName,
+            pmc_id=request.pmcId,
+        )
+
+        logger.info(f"Successfully generated summary for PMC {request.pmcId}")
+        return summary_result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error processing PMC {request.pmcId}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process publication summary: {str(e)}"
+        )
+
+
+@app.post("/literature/publication/summary/")
+async def create_publication_summary(request: PublicationSummaryRequest):
+    """
+    Create a focused summary of a publication regarding a specific gene-disease relationship.
+
+    This endpoint fetches a scientific publication from Europe PMC and generates
+    an AI-powered summary focused on the relationship between a target gene/protein
+    and a specific disease.
+
+    Args:
+        request: JSON body containing:
+            - pmcId: PMC ID of the publication
+            - targetSymbol: Gene/protein symbol of interest
+            - diseaseName: Disease name to focus on
+            - includeReferences: Whether to include references (optional, default: false)
+
+    Returns:
+        JSON response with the generated summary and metadata
+
+    Example:
+        POST /literature/publication/summary/
+        {
+            "pmcId": "PMC1234567",
+            "targetSymbol": "BRCA1",
+            "diseaseName": "breast cancer",
+            "includeReferences": false
+        }
+    """
+    return handle_publication_summary_request(request)
 
 
 # Error habdler
