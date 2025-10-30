@@ -5,7 +5,7 @@ description = "API for Open Targets serving as a centralized hub for AI-driven e
 readme = "README.md"
 authors = [{ name = "Open Targets", email = "contact@opentargets.org" }]
 
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]",
     "langchain>=0.3.13",
