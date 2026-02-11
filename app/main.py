@@ -75,7 +75,7 @@ async def health_check():
         )
 
 
-@app.post("/literature/publication/plaintext/")
+@app.post("/literature/publication/plaintext")
 async def get_publication_plain_text(request: PublicationPlainTextRequest):
     try:
         logger.info(f"Fetching publication text for PMC ID: {request.pmc_id}")
@@ -147,7 +147,7 @@ def handle_publication_summary_request(request: PublicationSummaryRequest) -> di
         )
 
 
-@app.post("/literature/publication/summary/")
+@app.post("/literature/publication/summary")
 async def create_publication_summary(request: PublicationSummaryRequest):
     """
     Create a focused summary of a publication regarding a specific gene-disease relationship.
