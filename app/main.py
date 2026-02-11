@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import JSONResponse
 from app.config import get_config
@@ -19,7 +22,51 @@ logger = logging.getLogger(__name__)
 
 config = get_config()
 
-app = FastAPI(debug=config.DEBUG)
+DESCRIPTION = """
+The Open Targets AI API provides AI-driven endpoints for the
+[Open Targets Platform](https://platform.opentargets.org).
+
+It fetches scientific publications from
+[Europe PMC](https://europepmc.org) and generates focused summaries
+about gene-disease relationships using OpenAI.
+
+### Capabilities
+
+* **Publication text extraction** — retrieve plain text from PMC full-text XML
+* **AI-powered summarisation** — generate concise summaries of a target-disease
+  relationship described in a publication
+"""
+
+app = FastAPI(
+    title="Open Targets AI API",
+    description=DESCRIPTION,
+    version="0.1.0",
+    debug=config.DEBUG,
+    docs_url=None,
+    redoc_url="/redoc",
+)
+
+# Serve static files (logo)
+static_dir = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui():
+    from fastapi.openapi.docs import get_swagger_ui_html
+
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title,
+        swagger_favicon_url="/static/OT_logo.png",
+        swagger_css_url="/static/swagger-custom.css",
+        swagger_ui_parameters={
+            "defaultModelsExpandDepth": -1,
+            "docExpansion": "list",
+            "tryItOutEnabled": True,
+        },
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
