@@ -106,12 +106,13 @@ def handle_publication_summary_request(request: PublicationSummaryRequest) -> di
         HTTPException: For various error conditions during processing
     """
     try:
-        logger.info(f"Processing summary request for PMC {request.pmcId}")
+        payload = request.payload
+        logger.info(f"Processing summary request for PMC {payload.pmcId}")
 
         # Step 1: Fetch publication text
-        logger.info(f"Fetching publication text for PMC {request.pmcId}")
+        logger.info(f"Fetching publication text for PMC {payload.pmcId}")
         publication_text = fetch_plain_text_from_europe_pmc(
-            request.pmcId, include_references=request.includeReferences
+            payload.pmcId, include_references=payload.includeReferences
         )
 
         if not publication_text or len(publication_text.strip()) < 100:
@@ -122,25 +123,25 @@ def handle_publication_summary_request(request: PublicationSummaryRequest) -> di
 
         # Step 2: Generate summary
         logger.info(
-            f"Generating summary for {request.targetSymbol} vs {request.diseaseName}"
+            f"Generating summary for {payload.targetSymbol} vs {payload.diseaseName}"
         )
         from app.controllers.summary_controller import create_publication_summary
 
         summary_result = create_publication_summary(
             text=publication_text,
-            target_symbol=request.targetSymbol,
-            disease_name=request.diseaseName,
-            pmc_id=request.pmcId,
+            target_symbol=payload.targetSymbol,
+            disease_name=payload.diseaseName,
+            pmc_id=payload.pmcId,
         )
 
-        logger.info(f"Successfully generated summary for PMC {request.pmcId}")
+        logger.info(f"Successfully generated summary for PMC {payload.pmcId}")
         return summary_result
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        logger.error(f"Unexpected error processing PMC {request.pmcId}: {e}")
+        logger.error(f"Unexpected error processing PMC {payload.pmcId}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to process publication summary: {str(e)}"
         )
