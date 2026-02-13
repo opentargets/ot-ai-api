@@ -84,42 +84,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """
-    Health check endpoint to verify the service is working properly.
-
-    Returns:
-        JSON response with service status and basic system information
-    """
-    try:
-        import time
-        from datetime import datetime
-
-        # Basic health check response
-        health_status = {
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "service": config.APP_NAME,
-            "version": "1.0.0",
-            "uptime": time.time(),
-            "checks": {"api": "ok", "config": "ok" if config else "error"},
-        }
-
-        # Optional: Add more detailed checks here
-        # For example, you could test database connections, external APIs, etc.
-
-        logger.info("Health check performed successfully")
-        return health_status
-
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-            },
-        )
+    return {"health": "ok"}
 
 
 @app.post("/literature/publication/plaintext")
