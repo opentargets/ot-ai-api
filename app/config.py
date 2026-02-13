@@ -57,14 +57,26 @@ class BaseConfig:
             )
 
 
+def _extra_cors_origins():
+    """Load additional CORS origins from CORS_ORIGIN_URLS env var (comma-separated)."""
+    env_origins = os.getenv("CORS_ORIGIN_URLS", "")
+    return [o.strip() for o in env_origins.split(",") if o.strip()]
+
+
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    CORS_ORIGINS = ["http://localhost:3000"]
+    CORS_ORIGINS = ["*"]
 
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
-    CORS_ORIGINS = [""]
+    CORS_ORIGINS = [
+        "https://platform.opentargets.org",
+        "https://platform.dev.opentargets.xyz",
+        "https://partner-platform.opentargets.org",
+        "https://partner-platform.dev.opentargets.xyz",
+        *_extra_cors_origins(),
+    ]
 
 
 def get_config():
