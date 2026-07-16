@@ -9,6 +9,7 @@ Author: Open Targets AI API
 
 import logging
 
+import httpx
 from openai import AsyncOpenAI
 
 from app.config import get_config
@@ -22,8 +23,14 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 # Get configuration
 config = get_config()
 
-# Initialize OpenAI client
-client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
+# Initialize OpenAI client. A bounded timeout replaces the SDK's 600s default,
+# and retries are disabled (a single slow/failed call should surface quickly
+# rather than silently retrying up to 2 more times against that same 600s cap).
+client = AsyncOpenAI(
+    api_key=config.OPENAI_API_KEY,
+    timeout=httpx.Timeout(connect=5.0, read=120.0, write=10.0, pool=5.0),
+    max_retries=0,
+)
 
 SYSTEM_INSTRUCTIONS = (
     'You are an expert in drug discovery and molecular biology. '
@@ -96,7 +103,17 @@ async def generate_publication_summary(text: str, target_symbol: str, disease_na
             model='gpt-5-mini',
             input=structured_input,
             instructions=SYSTEM_INSTRUCTIONS,
+            # A fixed-format, ~100-word summary doesn't need deep reasoning or
+            # a verbose response, and gpt-5-mini defaults to more of both.
+            reasoning={'effort': 'low'},
+            text={'verbosity': 'low'},
+            max_output_tokens=4000,
         )
+
+        if response.status != 'completed':
+            reason = response.incomplete_details.reason if response.incomplete_details else 'no detail'
+            raise RuntimeError(f'gpt-5-mini returned status={response.status} ({reason})')
+
         return response.output_text
 
     except Exception as e:
