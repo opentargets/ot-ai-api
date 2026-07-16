@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 config = get_config()
 
 DESCRIPTION = """
-The Open Targets AI API provides AI-driven endpoints for the
+The Open Targets Platform AI API provides AI-driven endpoints for the
 [Open Targets Platform](https://platform.opentargets.org).
 
 It fetches scientific publications from
@@ -31,13 +31,15 @@ about gene-disease relationships using OpenAI.
 
 ### Capabilities
 
-* **Publication text extraction** — retrieve plain text from PMC full-text XML
-* **AI-powered summarisation** — generate concise summaries of a target-disease
-  relationship described in a publication
+* **Publication text extraction** (`POST /literature/publication/plaintext`) —
+  retrieve plain text from PMC full-text XML for a given PMC ID
+* **AI-powered summarisation** (`POST /literature/publication/summary`) —
+  generate a concise, single-paragraph summary of a specific target-disease
+  relationship described in a publication, optionally including its references
 """
 
 app = FastAPI(
-    title='Open Targets AI API',
+    title='Open Targets Platform AI API',
     description=DESCRIPTION,
     version='0.1.0',
     debug=config.DEBUG,
@@ -63,6 +65,10 @@ async def custom_swagger_ui():
             'defaultModelsExpandDepth': -1,
             'docExpansion': 'list',
             'tryItOutEnabled': True,
+            # Publication plain-text responses can be tens of thousands of
+            # characters; swagger-ui's response syntax highlighter chokes on
+            # bodies that large and renders "[object Object]" instead.
+            'syntaxHighlight': False,
         },
     )
 

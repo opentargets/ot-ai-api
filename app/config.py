@@ -65,7 +65,7 @@ def _list_env(name: str, default: list[str]) -> list[str]:
 
 
 class Config:
-    APP_NAME = 'Open Targets AI API'
+    APP_NAME = 'Open Targets Platform AI API'
 
     # Defaults are deliberately restrictive: no debug mode, no allowed CORS
     # origins. Permissive local values belong in a .env.development file,
