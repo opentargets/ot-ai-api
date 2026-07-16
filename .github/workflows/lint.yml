@@ -1,0 +1,22 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Run ruff check
+        run: uv run --group lint ruff check .
+
+      - name: Run ruff format check
+        run: uv run --group lint ruff format --check .

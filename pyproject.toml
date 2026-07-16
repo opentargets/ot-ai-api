@@ -7,6 +7,7 @@ authors = [{ name = "Open Targets", email = "contact@opentargets.org" }]
 
 requires-python = ">=3.12"
 dependencies = [
+    "defusedxml>=0.7.1",
     "fastapi[standard]",
     "openai>=2.6.1",
     "python-dotenv>=1.0.1",

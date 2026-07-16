@@ -1,5 +1,4 @@
-"""
-Europe PMC Service Module
+"""Europe PMC Service Module.
 
 This service handles all interactions with the Europe PMC API and XML processing.
 It provides methods to fetch and extract plain text from scientific publications.
@@ -13,8 +12,10 @@ Author: Open Targets AI API
 """
 
 import logging
-import requests
 from xml.etree import ElementTree as ET
+
+import requests
+from defusedxml.ElementTree import fromstring as safe_fromstring
 from fastapi import HTTPException
 
 # Configure module logger
@@ -24,13 +25,13 @@ logger = logging.getLogger(__name__)
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-EUROPE_PMC_BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+EUROPE_PMC_BASE_URL = 'https://www.ebi.ac.uk/europepmc/webservices/rest'
 
 # Request configuration
 REQUEST_TIMEOUT = 30  # seconds
 REQUEST_HEADERS = {
-    "Accept": "application/xml",
-    "User-Agent": "Mozilla/5.0 (compatible; Research Bot)",
+    'Accept': 'application/xml',
+    'User-Agent': 'Mozilla/5.0 (compatible; Research Bot)',
 }
 
 # Content extraction settings
@@ -43,8 +44,7 @@ MIN_REFERENCES_LENGTH = 50  # Minimum length to include references section
 
 
 def build_publication_url(pmc_id: str) -> str:
-    """
-    Build the Europe PMC full-text XML URL for a given PMC ID.
+    """Build the Europe PMC full-text XML URL for a given PMC ID.
 
     Args:
         pmc_id (str): The PMC ID of the publication (e.g., 'PMC1234567')
@@ -56,7 +56,7 @@ def build_publication_url(pmc_id: str) -> str:
         >>> build_publication_url('PMC1234567')
         'https://www.ebi.ac.uk/europepmc/webservices/rest/PMC1234567/fullTextXML'
     """
-    return f"{EUROPE_PMC_BASE_URL}/{pmc_id}/fullTextXML"
+    return f'{EUROPE_PMC_BASE_URL}/{pmc_id}/fullTextXML'
 
 
 # =============================================================================
@@ -65,8 +65,7 @@ def build_publication_url(pmc_id: str) -> str:
 
 
 def extract_text_from_element(element: ET.Element) -> str:
-    """
-    Recursively extract all text content from an XML element and its children.
+    """Recursively extract all text content from an XML element and its children.
 
     This function traverses the XML tree structure and concatenates all text
     content, including text within nested elements and tail text.
@@ -77,25 +76,24 @@ def extract_text_from_element(element: ET.Element) -> str:
     Returns:
         str: Concatenated text content with spaces between elements
     """
-    text = ""
+    text = ''
 
     # Add the element's direct text content
     if element.text:
-        text += element.text.strip() + " "
+        text += element.text.strip() + ' '
 
     # Recursively process all child elements
     for child in element:
         text += extract_text_from_element(child)
         # Add tail text (text that comes after the closing tag)
         if child.tail:
-            text += child.tail.strip() + " "
+            text += child.tail.strip() + ' '
 
     return text
 
 
 def xml_to_dict(element: ET.Element) -> dict:
-    """
-    Recursively convert an XML element to a dictionary structure.
+    """Recursively convert an XML element to a dictionary structure.
 
     This is an alternative approach for XML processing that converts
     the XML tree into a nested dictionary format for easier manipulation.
@@ -113,7 +111,7 @@ def xml_to_dict(element: ET.Element) -> dict:
             result[child.tag] = xml_to_dict(child)
         else:
             # Leaf node - store the text content
-            result[child.tag] = child.text.strip() if child.text else ""
+            result[child.tag] = child.text.strip() if child.text else ''
 
     return result
 
@@ -124,8 +122,7 @@ def xml_to_dict(element: ET.Element) -> dict:
 
 
 def handle_section_recursive(section: ET.Element) -> str:
-    """
-    Recursively process a section element and extract formatted text.
+    """Recursively process a section element and extract formatted text.
 
     This function handles the hierarchical structure of academic papers,
     processing titles, paragraphs, and nested subsections.
@@ -136,30 +133,29 @@ def handle_section_recursive(section: ET.Element) -> str:
     Returns:
         str: Formatted text content of the section
     """
-    section_text = ""
+    section_text = ''
 
     # Extract section title
-    title = section.find("title")
+    title = section.find('title')
     if title is not None and title.text:
-        section_text += f"\n{title.text.strip()}\n\n"
+        section_text += f'\n{title.text.strip()}\n\n'
 
     # Process all paragraphs in this section
-    for paragraph in section.findall("p"):
-        if paragraph.text or len(list(paragraph)):
+    for paragraph in section.findall('p'):
+        if paragraph.text or list(paragraph):
             paragraph_text = extract_text_from_element(paragraph)
             if paragraph_text.strip():
-                section_text += f"{paragraph_text.strip()}\n\n"
+                section_text += f'{paragraph_text.strip()}\n\n'
 
     # Recursively process nested subsections
-    for child_section in section.findall("sec"):
+    for child_section in section.findall('sec'):
         section_text += handle_section_recursive(child_section)
 
     return section_text
 
 
 def extract_title_from_xml(root: ET.Element) -> tuple[str, bool]:
-    """
-    Extract the article title from various possible XML locations.
+    """Extract the article title from various possible XML locations.
 
     Args:
         root (ET.Element): The root XML element
@@ -168,22 +164,17 @@ def extract_title_from_xml(root: ET.Element) -> tuple[str, bool]:
         tuple[str, bool]: (title_text, found_flag)
     """
     # Try multiple common locations for article title
-    title_elem = (
-        root.find(".//article-title")
-        or root.find(".//title-group/article-title")
-        or root.find(".//title")
-    )
+    title_elem = root.find('.//article-title') or root.find('.//title-group/article-title') or root.find('.//title')
 
     if title_elem is not None and title_elem.text:
-        logger.info("Extracted title from publication")
+        logger.info('Extracted title from publication')
         return title_elem.text.strip(), True
 
-    return "", False
+    return '', False
 
 
 def extract_abstract_from_xml(root: ET.Element) -> tuple[str, bool]:
-    """
-    Extract the abstract from various possible XML locations.
+    """Extract the abstract from various possible XML locations.
 
     Args:
         root (ET.Element): The root XML element
@@ -192,30 +183,27 @@ def extract_abstract_from_xml(root: ET.Element) -> tuple[str, bool]:
         tuple[str, bool]: (abstract_text, found_flag)
     """
     # Try primary abstract location
-    abstract_elem = root.find(".//abstract")
+    abstract_elem = root.find('.//abstract')
 
     if abstract_elem is not None:
         abstract_text = extract_text_from_element(abstract_elem)
         if abstract_text.strip():
-            logger.info("Extracted abstract from publication")
+            logger.info('Extracted abstract from publication')
             return abstract_text.strip(), True
 
     # Try alternative abstract locations
-    abstract_elem = root.find(".//article-meta//abstract") or root.find(
-        ".//front//abstract"
-    )
+    abstract_elem = root.find('.//article-meta//abstract') or root.find('.//front//abstract')
     if abstract_elem is not None:
         abstract_text = extract_text_from_element(abstract_elem)
         if abstract_text.strip():
-            logger.info("Extracted abstract from alternative location")
+            logger.info('Extracted abstract from alternative location')
             return abstract_text.strip(), True
 
-    return "", False
+    return '', False
 
 
 def extract_body_content_from_xml(root: ET.Element) -> tuple[str, bool]:
-    """
-    Extract the main body content from the XML document.
+    """Extract the main body content from the XML document.
 
     Args:
         root (ET.Element): The root XML element
@@ -224,37 +212,36 @@ def extract_body_content_from_xml(root: ET.Element) -> tuple[str, bool]:
         tuple[str, bool]: (body_text, found_flag)
     """
     # Find the body element
-    body = root.find(".//body")
+    body = root.find('.//body')
     if body is None:
         # Try alternative body structures
-        body = root.find(".//article-body") or root.find(".//content")
+        body = root.find('.//article-body') or root.find('.//content')
         if body is None:
-            logger.warning("No body element found, trying to extract from root")
+            logger.warning('No body element found, trying to extract from root')
             body = root
 
     if body is not None:
-        body_text = ""
+        body_text = ''
 
         # Process structured sections
-        sections = body.findall("sec")
+        sections = body.findall('sec')
         if sections:
-            logger.info(f"Found {len(sections)} main sections in body")
+            logger.info(f'Found {len(sections)} main sections in body')
             for section in sections:
                 body_text += handle_section_recursive(section)
         else:
             # Fallback: extract all text from body if no sections found
-            logger.info("No sections found, extracting all text from body")
+            logger.info('No sections found, extracting all text from body')
             body_text = extract_text_from_element(body)
 
         if body_text.strip():
             return body_text.strip(), True
 
-    return "", False
+    return '', False
 
 
 def extract_references_from_xml(root: ET.Element) -> tuple[str, bool]:
-    """
-    Extract the references section if present and substantial.
+    """Extract the references section if present and substantial.
 
     Args:
         root (ET.Element): The root XML element
@@ -262,16 +249,16 @@ def extract_references_from_xml(root: ET.Element) -> tuple[str, bool]:
     Returns:
         tuple[str, bool]: (references_text, found_flag)
     """
-    refs_elem = root.find(".//ref-list") or root.find(".//references")
+    refs_elem = root.find('.//ref-list') or root.find('.//references')
 
     if refs_elem is not None:
         refs_text = extract_text_from_element(refs_elem)
         # Only include if substantial (avoid empty or minimal reference sections)
         if refs_text.strip() and len(refs_text.strip()) > MIN_REFERENCES_LENGTH:
-            logger.info("Extracted references section")
+            logger.info('Extracted references section')
             return refs_text.strip(), True
 
-    return "", False
+    return '', False
 
 
 # =============================================================================
@@ -280,8 +267,7 @@ def extract_references_from_xml(root: ET.Element) -> tuple[str, bool]:
 
 
 def extract_plain_text_from_dict(pub_body_json: dict) -> str:
-    """
-    Extract plain text from a dictionary representation of the XML.
+    """Extract plain text from a dictionary representation of the XML.
 
     This is an alternative processing method that works with the dictionary
     structure created by xml_to_dict().
@@ -295,39 +281,32 @@ def extract_plain_text_from_dict(pub_body_json: dict) -> str:
 
     def handle_paragraph(paragraph_data, title: str) -> str:
         """Process paragraph data from dictionary structure."""
-        section_text = [title + " \n "]
+        section_text = [title + ' \n ']
 
         if isinstance(paragraph_data, list):
-            section_text.extend(
-                (p if isinstance(p, str) else p.get("#text", "")) + " \n "
-                for p in paragraph_data
-            )
+            section_text.extend((p if isinstance(p, str) else p.get('#text', '')) + ' \n ' for p in paragraph_data)
         else:
-            text = (
-                paragraph_data
-                if isinstance(paragraph_data, str)
-                else paragraph_data.get("#text", "")
-            )
-            section_text.append(text + " \n ")
+            text = paragraph_data if isinstance(paragraph_data, str) else paragraph_data.get('#text', '')
+            section_text.append(text + ' \n ')
 
-        return "".join(section_text)
+        return ''.join(section_text)
 
     def handle_section(element_data: dict) -> str:
         """Recursively process section data from dictionary structure."""
         text_parts = []
 
-        if isinstance(element_data.get("sec"), list):
-            for section in element_data["sec"]:
-                title = section.get("title", "")
-                paragraphs = section.get("p")
-                child_sections = section.get("sec")
+        if isinstance(element_data.get('sec'), list):
+            for section in element_data['sec']:
+                title = section.get('title', '')
+                paragraphs = section.get('p')
+                child_sections = section.get('sec')
 
                 if paragraphs:
                     text_parts.append(handle_paragraph(paragraphs, title))
                 if child_sections:
                     text_parts.append(handle_section(section))
 
-        return "".join(text_parts)
+        return ''.join(text_parts)
 
     return handle_section(pub_body_json)
 
@@ -338,8 +317,7 @@ def extract_plain_text_from_dict(pub_body_json: dict) -> str:
 
 
 def extract_plain_text_from_xml(xml_data: str, include_references: bool = False) -> str:
-    """
-    Comprehensive extraction of plain text from Europe PMC XML.
+    """Comprehensive extraction of plain text from Europe PMC XML.
 
     This function extracts major components of a scientific publication:
     - Title
@@ -361,48 +339,48 @@ def extract_plain_text_from_xml(xml_data: str, include_references: bool = False)
         HTTPException: If XML parsing fails or no content is found
     """
     try:
-        root = ET.fromstring(xml_data)
-        full_text = ""
+        root = safe_fromstring(xml_data)
+        full_text = ''
 
         # 1. Extract Title
         title_text, title_found = extract_title_from_xml(root)
         if title_found:
-            full_text += f"TITLE: {title_text}\n\n"
+            full_text += f'TITLE: {title_text}\n\n'
 
         # 2. Extract Abstract
         abstract_text, abstract_found = extract_abstract_from_xml(root)
         if abstract_found:
-            full_text += f"ABSTRACT: {abstract_text}\n\n"
+            full_text += f'ABSTRACT: {abstract_text}\n\n'
 
         # 3. Extract Main Body Content
         body_text, body_found = extract_body_content_from_xml(root)
         if body_found:
-            full_text += f"MAIN CONTENT:\n\n{body_text}\n\n"
+            full_text += f'MAIN CONTENT:\n\n{body_text}\n\n'
 
         # 4. Extract References (optional)
         if include_references:
             refs_text, refs_found = extract_references_from_xml(root)
             if refs_found:
-                full_text += f"REFERENCES:\n{refs_text}\n\n"
+                full_text += f'REFERENCES:\n{refs_text}\n\n'
         else:
             refs_found = False  # For logging purposes
 
         # Validate that we extracted meaningful content
         result = full_text.strip()
         if not result:
-            return "No readable content found in the publication."
+            return 'No readable content found in the publication.'
 
         logger.info(
-            f"Successfully extracted {len(result)} characters of text "
-            f"(Title: {title_found}, Abstract: {abstract_found}, "
-            f"Body: {body_found}, References: {refs_found})"
+            f'Successfully extracted {len(result)} characters of text '
+            f'(Title: {title_found}, Abstract: {abstract_found}, '
+            f'Body: {body_found}, References: {refs_found})'
         )
 
         return result
 
     except ET.ParseError as e:
-        logger.error(f"Error parsing XML data: {e}")
-        raise HTTPException(status_code=500, detail="Error parsing publication text")
+        logger.error(f'Error parsing XML data: {e}')
+        raise HTTPException(status_code=500, detail='Error parsing publication text')
 
 
 # =============================================================================
@@ -411,8 +389,7 @@ def extract_plain_text_from_xml(xml_data: str, include_references: bool = False)
 
 
 def fetch_publication_xml(pmc_id: str) -> str:
-    """
-    Fetch raw XML content from Europe PMC for a given PMC ID.
+    """Fetch raw XML content from Europe PMC for a given PMC ID.
 
     Args:
         pmc_id (str): The PMC ID of the publication to fetch
@@ -428,56 +405,47 @@ def fetch_publication_xml(pmc_id: str) -> str:
             - 500: Network or processing errors
     """
     url = build_publication_url(pmc_id)
-    logger.info(f"Fetching publication XML from URL: {url}")
+    logger.info(f'Fetching publication XML from URL: {url}')
 
     try:
         # Make HTTP request with timeout and appropriate headers
-        logger.info(f"Requesting publication XML for PMC ID: {pmc_id}")
+        logger.info(f'Requesting publication XML for PMC ID: {pmc_id}')
         response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
 
         # Log response details for debugging
-        logger.info(f"Response status: {response.status_code}")
-        logger.info(
-            f"Response content type: {response.headers.get('content-type', 'unknown')}"
-        )
+        logger.info(f'Response status: {response.status_code}')
+        logger.info(f'Response content type: {response.headers.get("content-type", "unknown")}')
 
         # Handle specific HTTP status codes
         if response.status_code == 404:
-            logger.error(f"Publication with PMC ID {pmc_id} not found")
-            raise HTTPException(
-                status_code=404, detail=f"Publication with PMC ID {pmc_id} not found"
-            )
+            logger.error(f'Publication with PMC ID {pmc_id} not found')
+            raise HTTPException(status_code=404, detail=f'Publication with PMC ID {pmc_id} not found')
 
         if not response.ok:
-            logger.error(f"HTTP error {response.status_code}: {response.text[:500]}...")
+            logger.error(f'HTTP error {response.status_code}: {response.text[:500]}...')
             raise HTTPException(
                 status_code=503,
-                detail=f"Error fetching publication from EuropePMC (HTTP {response.status_code})",
+                detail=f'Error fetching publication from EuropePMC (HTTP {response.status_code})',
             )
 
         # Validate response format
-        if not response.text.strip().startswith("<"):
-            logger.error(
-                f"Invalid response format. Content preview: {response.text[:200]}..."
-            )
-            raise HTTPException(
-                status_code=502, detail="Invalid response format from EuropePMC service"
-            )
+        if not response.text.strip().startswith('<'):
+            logger.error(f'Invalid response format. Content preview: {response.text[:200]}...')
+            raise HTTPException(status_code=502, detail='Invalid response format from EuropePMC service')
 
-        logger.info(f"Successfully fetched XML for PMC ID {pmc_id}")
+        logger.info(f'Successfully fetched XML for PMC ID {pmc_id}')
         return response.text
 
     except requests.RequestException as e:
-        logger.error(f"Network error for PMC ID {pmc_id}: {e}")
+        logger.error(f'Network error for PMC ID {pmc_id}: {e}')
         raise HTTPException(
             status_code=500,
-            detail="Error communicating with EuropePMC service",
+            detail='Error communicating with EuropePMC service',
         )
 
 
 def extract_publication_text(pmc_id: str, include_references: bool = False) -> str:
-    """
-    Extract plain text from a Europe PMC publication.
+    """Extract plain text from a Europe PMC publication.
 
     This is the main service method that coordinates the complete workflow:
     1. Fetch XML from Europe PMC
@@ -500,10 +468,10 @@ def extract_publication_text(pmc_id: str, include_references: bool = False) -> s
 
         # Step 2: Parse XML with error handling
         try:
-            xml_data = ET.fromstring(xml_content)
-            logger.info(f"Successfully parsed XML for PMC ID {pmc_id}")
+            xml_data = safe_fromstring(xml_content)
+            logger.info(f'Successfully parsed XML for PMC ID {pmc_id}')
         except ET.ParseError as e:
-            logger.error(f"XML parsing error for PMC ID {pmc_id}: {e}")
+            logger.error(f'XML parsing error for PMC ID {pmc_id}: {e}')
             # Fallback to direct XML string processing
             return extract_plain_text_from_xml(xml_content, include_references)
 
@@ -513,20 +481,18 @@ def extract_publication_text(pmc_id: str, include_references: bool = False) -> s
             plain_text = extract_plain_text_from_dict(pub_body_json)
 
             if plain_text and len(plain_text.strip()) > 0:
-                logger.info(
-                    f"Successfully extracted text using dictionary method for PMC ID {pmc_id}"
-                )
+                logger.info(f'Successfully extracted text using dictionary method for PMC ID {pmc_id}')
                 return plain_text
         except Exception as e:
-            logger.warning(f"Dictionary extraction failed for PMC ID {pmc_id}: {e}")
+            logger.warning(f'Dictionary extraction failed for PMC ID {pmc_id}: {e}')
 
         # Step 4: Fallback to comprehensive XML parsing
-        logger.info(f"Using comprehensive XML parsing for PMC ID {pmc_id}")
+        logger.info(f'Using comprehensive XML parsing for PMC ID {pmc_id}')
         return extract_plain_text_from_xml(xml_content, include_references)
 
     except Exception as e:
-        logger.error(f"Unexpected error processing PMC ID {pmc_id}: {e}")
+        logger.error(f'Unexpected error processing PMC ID {pmc_id}: {e}')
         raise HTTPException(
             status_code=500,
-            detail="Unexpected error processing publication text",
+            detail='Unexpected error processing publication text',
         )
