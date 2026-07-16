@@ -9,7 +9,7 @@ Author: Open Targets AI API
 
 import logging
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from app.config import get_config
 
@@ -23,7 +23,7 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 config = get_config()
 
 # Initialize OpenAI client
-client = OpenAI(api_key=config.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
 
 SYSTEM_INSTRUCTIONS = (
     'You are an expert in drug discovery and molecular biology. '
@@ -64,7 +64,7 @@ def create_structured_input(target_symbol: str, disease_name: str, publication_t
     )
 
 
-def generate_publication_summary(text: str, target_symbol: str, disease_name: str, pmc_id: str) -> str:
+async def generate_publication_summary(text: str, target_symbol: str, disease_name: str, pmc_id: str) -> str:
     """Generate a focused summary from publication text using OpenAI.
 
     Args:
@@ -92,7 +92,7 @@ def generate_publication_summary(text: str, target_symbol: str, disease_name: st
 
         structured_input = create_structured_input(target_symbol, disease_name, text)
 
-        response = client.responses.create(
+        response = await client.responses.create(
             model='gpt-5-mini',
             input=structured_input,
             instructions=SYSTEM_INSTRUCTIONS,

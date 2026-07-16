@@ -14,7 +14,7 @@ Author: Open Targets AI API
 import logging
 from xml.etree import ElementTree as ET
 
-import requests
+import httpx
 from defusedxml.ElementTree import fromstring as safe_fromstring
 from fastapi import HTTPException
 
@@ -388,7 +388,7 @@ def extract_plain_text_from_xml(xml_data: str, include_references: bool = False)
 # =============================================================================
 
 
-def fetch_publication_xml(pmc_id: str) -> str:
+async def fetch_publication_xml(pmc_id: str) -> str:
     """Fetch raw XML content from Europe PMC for a given PMC ID.
 
     Args:
@@ -410,7 +410,8 @@ def fetch_publication_xml(pmc_id: str) -> str:
     try:
         # Make HTTP request with timeout and appropriate headers
         logger.info(f'Requesting publication XML for PMC ID: {pmc_id}')
-        response = requests.get(url, headers=REQUEST_HEADERS, timeout=REQUEST_TIMEOUT)
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+            response = await client.get(url, headers=REQUEST_HEADERS)
 
         # Log response details for debugging
         logger.info(f'Response status: {response.status_code}')
@@ -421,7 +422,7 @@ def fetch_publication_xml(pmc_id: str) -> str:
             logger.error(f'Publication with PMC ID {pmc_id} not found')
             raise HTTPException(status_code=404, detail=f'Publication with PMC ID {pmc_id} not found')
 
-        if not response.ok:
+        if not response.is_success:
             logger.error(f'HTTP error {response.status_code}: {response.text[:500]}...')
             raise HTTPException(
                 status_code=503,
@@ -436,7 +437,7 @@ def fetch_publication_xml(pmc_id: str) -> str:
         logger.info(f'Successfully fetched XML for PMC ID {pmc_id}')
         return response.text
 
-    except requests.RequestException as e:
+    except httpx.RequestError as e:
         logger.error(f'Network error for PMC ID {pmc_id}: {e}')
         raise HTTPException(
             status_code=500,
@@ -444,7 +445,7 @@ def fetch_publication_xml(pmc_id: str) -> str:
         )
 
 
-def extract_publication_text(pmc_id: str, include_references: bool = False) -> str:
+async def extract_publication_text(pmc_id: str, include_references: bool = False) -> str:
     """Extract plain text from a Europe PMC publication.
 
     This is the main service method that coordinates the complete workflow:
@@ -464,7 +465,7 @@ def extract_publication_text(pmc_id: str, include_references: bool = False) -> s
     """
     try:
         # Step 1: Fetch XML content
-        xml_content = fetch_publication_xml(pmc_id)
+        xml_content = await fetch_publication_xml(pmc_id)
 
         # Step 2: Parse XML with error handling
         try:

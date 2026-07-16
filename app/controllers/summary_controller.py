@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-def create_publication_summary(text: str, target_symbol: str, disease_name: str, pmc_id: str) -> dict:
+async def create_publication_summary(text: str, target_symbol: str, disease_name: str, pmc_id: str) -> dict:
     """Controller function to create a focused publication summary.
 
     This function acts as a thin layer between the HTTP endpoint and the service,
@@ -78,7 +78,7 @@ def create_publication_summary(text: str, target_symbol: str, disease_name: str,
         logger.info(f'Processing summary request for PMC {pmc_id}: {target_symbol} vs {disease_name}')
 
         # Delegate to service layer
-        result = generate_publication_summary(text, target_symbol, disease_name, pmc_id)
+        result = await generate_publication_summary(text, target_symbol, disease_name, pmc_id)
 
         logger.info(f'Successfully generated summary for PMC {pmc_id}')
         return result

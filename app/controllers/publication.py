@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-def fetch_plain_text_from_europe_pmc(pmc_id: str, include_references: bool = False) -> str:
+async def fetch_plain_text_from_europe_pmc(pmc_id: str, include_references: bool = False) -> str:
     r"""Controller function to fetch and extract plain text from a Europe PMC publication.
 
     This function acts as a thin layer between the HTTP endpoint and the service,
@@ -60,7 +60,7 @@ def fetch_plain_text_from_europe_pmc(pmc_id: str, include_references: bool = Fal
         logger.info(f'Processing publication request for PMC ID: {pmc_id}')
 
         # Delegate to service layer
-        result = extract_publication_text(pmc_id, include_references)
+        result = await extract_publication_text(pmc_id, include_references)
 
         # Validate result
         if not result or len(result.strip()) < 10:

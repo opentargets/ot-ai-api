@@ -9,6 +9,7 @@ from starlette.responses import JSONResponse
 
 from app.config import get_config
 from app.controllers.publication import fetch_plain_text_from_europe_pmc
+from app.controllers.summary_controller import create_publication_summary as create_summary
 from app.models.publication import (
     PublicationPlainTextRequest,
     PublicationSummaryRequest,
@@ -96,7 +97,7 @@ async def health_check():
 async def get_publication_plain_text(request: PublicationPlainTextRequest):
     try:
         logger.info(f'Fetching publication text for PMC ID: {request.pmc_id}')
-        plain_text = fetch_plain_text_from_europe_pmc(request.pmc_id)
+        plain_text = await fetch_plain_text_from_europe_pmc(request.pmc_id)
         return {'pmc_id': request.pmc_id, 'plain_text': plain_text}
     except HTTPException:
         raise
@@ -105,7 +106,7 @@ async def get_publication_plain_text(request: PublicationPlainTextRequest):
         raise HTTPException(status_code=500, detail='Unexpected error occurred')
 
 
-def handle_publication_summary_request(request: PublicationSummaryRequest) -> dict:
+async def handle_publication_summary_request(request: PublicationSummaryRequest) -> dict:
     """Logic for creating publication summaries.
 
     This function coordinates the process of:
@@ -127,7 +128,9 @@ def handle_publication_summary_request(request: PublicationSummaryRequest) -> di
 
         # Step 1: Fetch publication text
         logger.info(f'Fetching publication text for PMC {payload.pmcId}')
-        publication_text = fetch_plain_text_from_europe_pmc(payload.pmcId, include_references=payload.includeReferences)
+        publication_text = await fetch_plain_text_from_europe_pmc(
+            payload.pmcId, include_references=payload.includeReferences
+        )
 
         if not publication_text or len(publication_text.strip()) < 100:
             raise HTTPException(
@@ -137,9 +140,7 @@ def handle_publication_summary_request(request: PublicationSummaryRequest) -> di
 
         # Step 2: Generate summary
         logger.info(f'Generating summary for {payload.targetSymbol} vs {payload.diseaseName}')
-        from app.controllers.summary_controller import create_publication_summary
-
-        summary_result = create_publication_summary(
+        summary_result = await create_summary(
             text=publication_text,
             target_symbol=payload.targetSymbol,
             disease_name=payload.diseaseName,
@@ -184,7 +185,7 @@ async def create_publication_summary(request: PublicationSummaryRequest):
             "includeReferences": false
         }
     """
-    return handle_publication_summary_request(request)
+    return await handle_publication_summary_request(request)
 
 
 # Error habdler
