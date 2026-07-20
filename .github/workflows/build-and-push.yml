@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag to build and push to GHCR only (skips GAR)'
+        required: true
 
 jobs:
   build:
@@ -22,12 +27,26 @@ jobs:
 
       - name: Prepare environment
         run: |
-          TAG=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          TAG=$(echo "$TAG" | sed 's/^v//')
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "The tag for this build is $TAG"
           echo "The repo name is: $REPO"
 
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAGS="ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:$TAG
+          europe-west1-docker.pkg.dev/open-targets-eu-dev/$REPO/$REPO:latest
+          europe-west1-docker.pkg.dev/open-targets-eu-dev/$REPO/$REPO:$TAG"
+          else
+            TAGS="ghcr.io/${{ github.repository }}:$TAG"
+          fi
+          echo "TAGS<<EOF" >> $GITHUB_ENV
+          echo "$TAGS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - id: auth-google
+        if: github.event_name == 'push'
         uses: google-github-actions/auth@v2
         with:
           token_format: access_token
@@ -38,6 +57,7 @@ jobs:
 
       - id: auth-gar
         name: Login to Google Artifact Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: europe-west1-docker.pkg.dev
@@ -58,14 +78,11 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ env.TAG }}
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:latest
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:${{ env.TAG }}
+          tags: ${{ env.TAGS }}
 
       - id: generate-attestations
         name: Generate artifact attestation
+        if: github.event_name == 'push'
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}
