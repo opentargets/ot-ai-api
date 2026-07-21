@@ -1,0 +1,11 @@
+@import url('https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css');
+
+.swagger-ui .topbar { display: none; }
+.swagger-ui .info::before {
+    content: '';
+    display: block;
+    background: url('/static/OT_logo.png') no-repeat center;
+    background-size: contain;
+    height: 80px;
+    margin-bottom: 16px;
+}
